@@ -1,0 +1,11 @@
+operators:
+  camelk-operator0:
+    enabled: true
+    namespace:
+      name: it-debezium-monit-app
+    subscription:
+      channel: 1.10.x
+      approval: Manual
+      operatorName: red-hat-camel-k
+      source: redhat-operators
+      sourceNamespace: openshift-marketplace
