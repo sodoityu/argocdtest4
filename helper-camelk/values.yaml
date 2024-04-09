@@ -1,5 +1,5 @@
 operators:
-  camelk-operator0:
+  camelk-operator:
     enabled: true
     namespace:
       name: it-debezium-monit-app
