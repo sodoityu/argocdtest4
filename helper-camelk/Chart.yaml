@@ -1,0 +1,4 @@
+apiVersion: v2
+name: helper-camelk
+description: Provisioning Camel K Operator
+version: 1.0.0
