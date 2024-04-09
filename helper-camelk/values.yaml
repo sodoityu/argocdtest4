@@ -5,7 +5,8 @@ operators:
       name: it-debezium-monit-app
     subscription:
       channel: 1.10.x
-      approval: Manual
+      approval: Automatic
       operatorName: red-hat-camel-k
       source: redhat-operators
       sourceNamespace: openshift-marketplace
+      csv: red-hat-camel-k-operator.v1.10.6
