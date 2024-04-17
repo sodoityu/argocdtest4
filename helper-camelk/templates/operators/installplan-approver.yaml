@@ -1,0 +1,58 @@
+{{- range $key, $value := .Values.operators }}
+{{- if eq ($value.enabled | toString) "true" }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: installplan-approver-{{ $value.namespace.name }}
+  namespace: {{ $value.namespace.name | quote }}
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: {{ $value.syncwave | default "1" | quote }}
+  labels:
+    {{- include "common.labels" $ | nindent 4 }}
+spec:
+  template:
+    spec:
+      containers:
+        - image: registry.redhat.io/openshift4/ose-cli
+          command:
+            - /bin/bash
+            - -c
+            - |
+              export HOME=/tmp/approver
+
+              echo "Approving operator install. Waiting a few seconds to make sure the InstallPlan gets created first."
+              sleep_timer=20
+
+              SLEEPER_TMP=0
+              while [[ $SLEEPER_TMP -le "$sleep_timer" ]]; do
+                echo -n "."
+                sleep 1
+                SLEEPER_TMP=$(($SLEEPER_TMP+1))
+              done
+
+              subscription={{ $key | quote }}
+              echo "Processing subscription '$subscription'"
+
+              installplan=$(oc get subscriptions.operators.coreos.com --field-selector metadata.name=${subscription} -o jsonpath='{.items[0].status.installPlanRef.name}')
+              echo "Check install plan '$installplan' approved status"
+              oc get installplan $installplan -o jsonpath="{.spec.approved}"
+
+              if [ "`oc get installplan $installplan -o jsonpath="{.spec.approved}"`" == "false" ]; then
+                echo "Approving Subscription '$subscription' with install plan '$installplan'"
+                oc patch installplan $installplan --type=json -p='[{"op":"replace","path": "/spec/approved", "value": true}]'
+              else
+                echo "Install plan '$installplan' already approved"
+              fi
+          imagePullPolicy: Always
+          name: installplan-approver
+          env:
+            - name: SLEEP
+              value: "20"
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 30
+      serviceAccountName: status-checker
+{{- end }}
+{{- end }}
